@@ -1,0 +1,5 @@
+# median extension
+comment = 'Median aggregate'
+default_version = '1.0'
+module_pathname = '$libdir/median.so'
+relocatable = false

@@ -1,0 +1,226 @@
+CREATE TABLE intvals(val int, color text);
+-- Test empty table
+SELECT median(val) FROM intvals;
+ median 
+--------
+       
+(1 row)
+
+-- Integers with odd number of values
+INSERT INTO intvals VALUES
+       (1, 'a'),
+       (2, 'c'),
+       (9, 'b'),
+       (7, 'c'),
+       (2, 'd'),
+       (-3, 'd'),
+       (2, 'e');
+SELECT * FROM intvals ORDER BY val;
+ val | color 
+-----+-------
+  -3 | d
+   1 | a
+   2 | c
+   2 | e
+   2 | d
+   7 | c
+   9 | b
+(7 rows)
+
+SELECT median(val) FROM intvals;
+ median 
+--------
+      2
+(1 row)
+
+-- Integers with NULLs and even number of values
+INSERT INTO intvals VALUES
+       (99, 'a'),
+       (NULL, 'a'),
+       (NULL, 'e'),
+       (NULL, 'b'),
+       (7, 'c'),
+       (0, 'd');
+SELECT * FROM intvals ORDER BY val;
+ val | color 
+-----+-------
+  -3 | d
+   0 | d
+   1 | a
+   2 | e
+   2 | d
+   2 | c
+   7 | c
+   7 | c
+   9 | b
+  99 | a
+     | a
+     | e
+     | b
+(13 rows)
+
+SELECT median(val) FROM intvals;
+ median 
+--------
+      2
+(1 row)
+
+-- Text values
+CREATE TABLE textvals(val text, color int);
+INSERT INTO textvals VALUES
+       ('erik', 1),
+       ('mat', 3),
+       ('rob', 8),
+       ('david', 9),
+       ('lee', 2);
+SELECT * FROM textvals ORDER BY val;
+  val  | color 
+-------+-------
+ david |     9
+ erik  |     1
+ lee   |     2
+ mat   |     3
+ rob   |     8
+(5 rows)
+
+SELECT median(val) FROM textvals;
+ median 
+--------
+ lee
+(1 row)
+
+-- Test large table with timestamps
+CREATE TABLE timestampvals (val timestamptz);
+INSERT INTO timestampvals(val)
+SELECT TIMESTAMP 'epoch' + (i * INTERVAL '1 second')
+FROM generate_series(0, 100000) as T(i);
+SELECT median(val) FROM timestampvals;
+            median            
+------------------------------
+ Thu Jan 01 13:53:20 1970 PST
+(1 row)
+
+-- interpolate numeric values
+with numerics as (select generate_series(0.0, 101.0) num)
+select median(num::numeric) from numerics order by random();
+       median        
+---------------------
+ 50.5000000000000000
+(1 row)
+
+-- pick middle numeric value
+with numerics as (select generate_series(0.0, 100.0) num)
+select median(num::numeric) from numerics order by random();
+ median 
+--------
+   50.0
+(1 row)
+
+-- pick middle bigint values
+with bigints as (select generate_series(0, 100) num)
+select median(num::bigint) from bigints order by random();
+ median 
+--------
+     50
+(1 row)
+
+-- interpolate bigint values
+with bigints as (select generate_series(0, 101) num)
+select median(num::bigint) from bigints order by random();
+ median 
+--------
+     51
+(1 row)
+
+-- interpolate real values
+with reals as (select generate_series(0.0, 101.0) num)
+select median(num::real) from reals order by random();
+ median 
+--------
+   50.5
+(1 row)
+
+-- pick middle real values
+with reals as (select generate_series(0.0, 100.0) num)
+select median(num::real) from reals order by random();
+ median 
+--------
+     50
+(1 row)
+
+-- pick middle smallint values
+with smallints as (select generate_series(0, 100) num)
+select median(num::smallint) from smallints order by random();
+ median 
+--------
+     50
+(1 row)
+
+-- interpolate smallint values
+with smallints as (select generate_series(0, 101) num)
+select median(num::smallint) from smallints order by random();
+ median 
+--------
+     51
+(1 row)
+
+-- interpolate double precision values
+with double_precision as (select generate_series(0.0, 101.0) num)
+select median(cast(num as double precision)) from double_precision order by random();
+ median 
+--------
+   50.5
+(1 row)
+
+-- pick middle double precision values
+with double_precision as (select generate_series(0.0, 100.0) num)
+select median(cast(num as double precision)) from double_precision order by random();
+ median 
+--------
+     50
+(1 row)
+
+-- pick middle interval values
+with smallints as (select generate_series(0, 100) num)
+select median(num * '1 minute'::interval) from smallints order by random();
+  median   
+-----------
+ @ 50 mins
+(1 row)
+
+-- interpolate interval values
+with smallints as (select generate_series(0, 101) num)
+select median(num * '1 minute'::interval) from smallints order by random();
+      median       
+-------------------
+ @ 50 mins 30 secs
+(1 row)
+
+-- huge data values
+with bigints as (select generate_series(0, 20000000) num)
+select median(num::bigint) from bigints order by random();
+  median  
+----------
+ 10000000
+(1 row)
+
+-- does not interpolate text
+INSERT INTO textvals VALUES
+       ('sam', 1);
+SELECT * FROM textvals ORDER BY val;
+  val  | color 
+-------+-------
+ david |     9
+ erik  |     1
+ lee   |     2
+ mat   |     3
+ rob   |     8
+ sam   |     1
+(6 rows)
+
+SELECT median(val) FROM textvals;
+ median 
+--------
+ lee
+(1 row)
+
